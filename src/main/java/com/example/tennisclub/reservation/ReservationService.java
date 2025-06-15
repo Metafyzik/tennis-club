@@ -4,6 +4,7 @@ import com.example.tennisclub.court.CourtService;
 import com.example.tennisclub.court.dto.CourtResponseDto;
 import com.example.tennisclub.court.entity.Court;
 import com.example.tennisclub.exception.EntityFinder;
+import com.example.tennisclub.reservation.config.PricingProperties;
 import com.example.tennisclub.reservation.dto.ReservationRequestDto;
 import com.example.tennisclub.reservation.dto.ReservationResponseDto;
 import com.example.tennisclub.reservation.entity.Reservation;
@@ -31,6 +32,7 @@ public class ReservationService {
     private final EntityFinder entityFinder;
     private final CourtService courtService;
     private final UserService userService;
+    private final PricingProperties pricing;
     public ReservationResponseDto getReservation(Long id) {
         Reservation reservation = findReservationEntityByIdOrThrow(id);
 
@@ -162,6 +164,6 @@ public class ReservationService {
     }
     private double calculatePrice(boolean isDouble, LocalDateTime start, LocalDateTime end, double pricePerSurfaceType) {
         long minutes = Duration.between(start, end).toMinutes();
-        return pricePerSurfaceType * minutes * (isDouble ? 1.5: 1);
+        return pricePerSurfaceType * minutes * (isDouble ? pricing.getDoubles(): 1);
     }
 }
