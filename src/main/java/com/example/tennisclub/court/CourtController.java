@@ -7,6 +7,7 @@ import com.example.tennisclub.court.dto.CourtResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,16 +15,19 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/courts")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 public class CourtController {
 
     private final CourtService courtService;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'MEMBER')")
     public List<CourtResponseDto> getAllCourts() {
         return courtService.getAllCourts();
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MEMBER')")
     public CourtResponseDto getCourt(@PathVariable Long id) {
         return courtService.getCourt(id);
     }
