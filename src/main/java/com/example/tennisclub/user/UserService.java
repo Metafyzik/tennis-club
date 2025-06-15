@@ -29,5 +29,13 @@ public class UserService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "User not found with username: " + username));
     }
+
+    public boolean userWithUsernameExist(String username) {
+        return userRepository.findByUsername(username).isPresent();
+    }
+
+    public boolean userWithPhoneNumberExist(String phoneNumber) {
+        return userRepository.findByPhoneNumber(phoneNumber).isPresent();
+    }
 }
 
