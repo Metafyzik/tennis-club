@@ -13,6 +13,7 @@ import com.example.tennisclub.user.UserService;
 import com.example.tennisclub.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -26,6 +27,7 @@ public class DataInitializer implements CommandLineRunner {
     private final CourtService courtService;
     private final DataInitializerProperties properties;
 
+    private final PasswordEncoder passwordEncoder;
     private final UserService userService;
     private final ReservationService reservationService;
 
@@ -77,17 +79,18 @@ public class DataInitializer implements CommandLineRunner {
 
         //Create users
         String dummyPassword = "12345";
+        String encodedPassword = passwordEncoder.encode(dummyPassword);
 
         User admin = User.builder()
                 .phoneNumber("1234567890")
-                .password(dummyPassword)
+                .password(encodedPassword)
                 .username("Alice")
                 .roles(Set.of(Role.ADMIN))
                 .build();
 
         User member = User.builder()
                 .phoneNumber("0987654321")
-                .password(dummyPassword)
+                .password(encodedPassword)
                 .username("Bob")
                 .roles(Set.of(Role.MEMBER))
                 .build();
