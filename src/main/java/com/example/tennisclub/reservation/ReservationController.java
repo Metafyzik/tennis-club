@@ -2,6 +2,7 @@ package com.example.tennisclub.reservation;
 
 import com.example.tennisclub.reservation.dto.ReservationRequestDto;
 import com.example.tennisclub.reservation.dto.ReservationResponseDto;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -42,7 +43,7 @@ public class ReservationController {
     }
 
     @PostMapping
-    public ResponseEntity<ReservationResponseDto> create(@RequestBody ReservationRequestDto req) {
+    public ResponseEntity<ReservationResponseDto> create(@RequestBody @Valid ReservationRequestDto req) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(reservationService.create(req));
@@ -51,7 +52,7 @@ public class ReservationController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ReservationResponseDto update(@PathVariable Long id, @RequestBody ReservationRequestDto req) {
+    public ReservationResponseDto update(@PathVariable @Valid Long id, @RequestBody ReservationRequestDto req) {
         return reservationService.update(id, req);
     }
 

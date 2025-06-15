@@ -4,6 +4,7 @@ package com.example.tennisclub.court;
 
 import com.example.tennisclub.court.dto.CourtRequestDto;
 import com.example.tennisclub.court.dto.CourtResponseDto;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,14 +34,14 @@ public class CourtController {
     }
 
     @PostMapping
-    public  ResponseEntity<CourtResponseDto> create(@RequestBody CourtRequestDto dto) {
+    public  ResponseEntity<CourtResponseDto> create(@RequestBody @Valid CourtRequestDto dto) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(courtService.create(dto));
     }
 
     @PutMapping("/{id}")
-    public CourtResponseDto update(@PathVariable Long id, @RequestBody CourtRequestDto dto) {
+    public CourtResponseDto update(@PathVariable Long id, @RequestBody @Valid CourtRequestDto dto) {
         return courtService.update(id, dto);
     }
 

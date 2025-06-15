@@ -4,6 +4,7 @@ import com.example.tennisclub.auth.dto.LogRequestDto;
 import com.example.tennisclub.auth.dto.RegistRequestDto;
 import com.example.tennisclub.auth.dto.TokenResponseDto;
 import com.example.tennisclub.auth.refreshToken.dto.RefreshTokenRequestDto;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,23 +20,23 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody RegistRequestDto request) {
+    public ResponseEntity<String> register(@RequestBody @Valid RegistRequestDto request) {
         authService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED).body("User registered successfully.");
     }
 
     @PostMapping("/login")
-    public ResponseEntity<TokenResponseDto> login(@RequestBody LogRequestDto request) {
+    public ResponseEntity<TokenResponseDto> login(@RequestBody @Valid LogRequestDto request) {
         return ResponseEntity.ok(authService.login(request));
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<TokenResponseDto> refresh(@RequestBody RefreshTokenRequestDto request) {
+    public ResponseEntity<TokenResponseDto> refresh(@RequestBody @Valid RefreshTokenRequestDto request) {
         return ResponseEntity.ok(authService.refresh(request));
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<String> logout(@RequestBody RefreshTokenRequestDto request) {
+    public ResponseEntity<String> logout(@RequestBody @Valid RefreshTokenRequestDto request) {
         authService.logout(request.refreshToken());
         return ResponseEntity.ok("Logged out successfully");
     }
