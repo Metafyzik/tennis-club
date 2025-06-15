@@ -19,13 +19,13 @@ public class CourtController {
     private final CourtService courtService;
 
     @GetMapping
-    public List<CourtResponseDto> findAll() {
-        return courtService.findAll();
+    public List<CourtResponseDto> getAllCourts() {
+        return courtService.getAllCourts();
     }
 
     @GetMapping("/{id}")
-    public CourtResponseDto findById(@PathVariable Long id) {
-        return courtService.findById(id);
+    public CourtResponseDto getCourt(@PathVariable Long id) {
+        return courtService.getCourt(id);
     }
 
     @PostMapping

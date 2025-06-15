@@ -26,19 +26,21 @@ public class CourtService {
     private final SurfaceTypeService surfaceTypeService;
     private final EntityFinder entityFinder;
 
-    //TODO split into 2 functions for returning list of Courts and other for response objects
-    public List<CourtResponseDto> findAll() {
-        return courtRepository.findAll().stream()
+    public List<Court> findAllCourtEntities() {
+        return courtRepository.findAll();
+    }
+    public List<CourtResponseDto> getAllCourts() {
+        return findAllCourtEntities().stream()
                 .map(this::mapToResponseDto)
                 .toList();
     }
 
-    public Court findByIdOrThrow(Long id) {
+    public Court findCourtEntityByIdOrThrow(Long id) {
         return entityFinder.findByIdOrThrow(courtRepository.findById(id), id, "Court");
     }
 
-    public CourtResponseDto findById(Long id) {
-        return mapToResponseDto(findByIdOrThrow(id));
+    public CourtResponseDto getCourt(Long id) {
+        return mapToResponseDto(findCourtEntityByIdOrThrow(id));
     }
 
     @Transactional
@@ -58,7 +60,7 @@ public class CourtService {
         long surfaceTypeId = dto.surfaceTypeId();
         SurfaceType surfaceType = surfaceTypeService.findByIdOrThrow(surfaceTypeId);
 
-        Court court = findByIdOrThrow(updatedCourtId);
+        Court court = findCourtEntityByIdOrThrow(updatedCourtId);
 
         court.setName(dto.name());
         court.setSurfaceType(surfaceType);
