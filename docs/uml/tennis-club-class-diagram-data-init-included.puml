@@ -1,0 +1,422 @@
+@startuml Tennis Club Entity, Repository, Service, DTO, Controller, Configuration Layer and DataInitializer
+
+!define ENTITY_COLOR #E1F5FE
+!define ENUM_COLOR #FFF3E0
+!define REPOSITORY_COLOR #F3E5F5
+!define SERVICE_COLOR #E8F5E8
+!define DTO_COLOR #FFF8E1
+!define CONTROLLER_COLOR #FFEBEE
+!define CONFIG_COLOR #F1F8E9
+
+package "Configuration Layer" {
+
+  class SecurityConfig CONFIG_COLOR {
+    - jwtAuthenticationFilter: JwtAuthenticationFilter
+    + authenticationManager(AuthenticationConfiguration): AuthenticationManager
+    + passwordEncoder(): PasswordEncoder
+    + securityFilterChain(HttpSecurity): SecurityFilterChain
+  }
+
+  class JwtProperties CONFIG_COLOR {
+    + key: String
+    + accessTokenDuration: Duration
+    + refreshTokenDuration: Duration
+  }
+
+  class PricingProperties CONFIG_COLOR {
+    + doubles: double
+  }
+
+  class DataInitializerProperties CONFIG_COLOR {
+    - initData: boolean
+    + isInitData(): boolean
+    + setInitData(boolean): void
+  }
+
+  class JwtUtil CONFIG_COLOR {
+    - jwtProperties: JwtProperties
+    - getSignKey(): SecretKey
+    + generateAccessToken(UserDetails): String
+    + generateRefreshToken(): String
+    + extractUsername(String): String
+    + validateToken(String, UserDetails): boolean
+    - extractClaim(String, Function): T
+    - isTokenExpired(String): boolean
+  }
+
+  class JwtAuthenticationFilter CONFIG_COLOR {
+    - jwtUtil: JwtUtil
+    - userDetailsService: CustomUserDetailsService
+    + doFilterInternal(HttpServletRequest, HttpServletResponse, FilterChain): void
+  }
+
+  class DataInitializer CONFIG_COLOR {
+    - surfaceTypeService: SurfaceTypeService
+    - courtService: CourtService
+    - properties: DataInitializerProperties
+    - passwordEncoder: PasswordEncoder
+    - userService: UserService
+    - reservationService: ReservationService
+    + run(String...): void
+  }
+
+}
+
+package "Controller Layer" {
+
+  class AuthController CONTROLLER_COLOR {
+    - authService: AuthService
+    + register(@RequestBody @Valid RegistRequestDto): ResponseEntity<String>
+    + login(@RequestBody @Valid LogRequestDto): ResponseEntity<TokenResponseDto>
+    + refresh(@RequestBody @Valid RefreshTokenRequestDto): ResponseEntity<TokenResponseDto>
+    + logout(@RequestBody @Valid RefreshTokenRequestDto): ResponseEntity<String>
+  }
+
+  class CourtController CONTROLLER_COLOR {
+    - courtService: CourtService
+    + getAllCourts(): List<CourtResponseDto>
+    + getCourt(@PathVariable Long): CourtResponseDto
+    + create(@RequestBody @Valid CourtRequestDto): ResponseEntity<CourtResponseDto>
+    + update(@PathVariable Long, @RequestBody @Valid CourtRequestDto): CourtResponseDto
+    + softDelete(@PathVariable Long): ResponseEntity<String>
+  }
+
+  class ReservationController CONTROLLER_COLOR {
+    - reservationService: ReservationService
+    + getReservation(@PathVariable Long): ReservationResponseDto
+    + getReservationsByCourt(@PathVariable Long): List<ReservationResponseDto>
+    + getAllReservations(): List<ReservationResponseDto>
+    + getReservationsByPhone(@RequestParam String, @RequestParam boolean): List<ReservationResponseDto>
+    + create(@RequestBody @Valid ReservationRequestDto): ResponseEntity<ReservationResponseDto>
+    + update(@PathVariable Long, @RequestBody ReservationRequestDto): ReservationResponseDto
+    + softDelete(@PathVariable Long): ResponseEntity<String>
+  }
+
+}
+
+package "Entity Layer" {
+
+  enum Role <<enumeration>> ENUM_COLOR {
+    ADMIN
+    MEMBER
+  }
+
+  class User ENTITY_COLOR {
+    - id: Long
+    - phoneNumber: String
+    - username: String
+    - password: String
+    - deleted: Boolean
+    - roles: Set<Role>
+  }
+
+  class RefreshToken ENTITY_COLOR {
+    - id: Long
+    - token: String
+    - expiryDate: Instant
+    + isExpired(): boolean
+  }
+
+  class SurfaceType ENTITY_COLOR {
+    - id: Long
+    - name: String
+    - pricePerMinute: Double
+    - deleted: Boolean
+  }
+
+  class Court ENTITY_COLOR {
+    - id: Long
+    - name: String
+    - deleted: Boolean
+  }
+
+  class Reservation ENTITY_COLOR {
+    - id: Long
+    - startTime: LocalDateTime
+    - endTime: LocalDateTime
+    - isDoubles: Boolean
+    - totalPrice: Double
+    - deleted: Boolean
+  }
+
+}
+
+package "Repository Layer" {
+
+  class UserRepository REPOSITORY_COLOR {
+    - em: EntityManager
+    + save(User): User
+    + findByPhoneNumber(String): Optional<User>
+    + findByUsername(String): Optional<User>
+  }
+
+  class RefreshTokenRepository REPOSITORY_COLOR {
+    - em: EntityManager
+    + save(RefreshToken): RefreshToken
+    + findByToken(String): Optional<RefreshToken>
+    + deleteByUser(User): void
+    + deleteByToken(String): void
+  }
+
+  class SurfaceTypeRepository REPOSITORY_COLOR {
+    - em: EntityManager
+    + save(SurfaceType): SurfaceType
+    + findById(Long): Optional<SurfaceType>
+  }
+
+  class CourtRepository REPOSITORY_COLOR {
+    - em: EntityManager
+    + save(Court): Court
+    + update(Court): Court
+    + findAll(): List<Court>
+    + findById(Long): Optional<Court>
+    + softDelete(Long): boolean
+  }
+
+  class ReservationRepository REPOSITORY_COLOR {
+    - em: EntityManager
+    + save(Reservation): Reservation
+    + update(Reservation): Reservation
+    + findById(Long): Optional<Reservation>
+    + findAll(): List<Reservation>
+    + findAllByCourtId(Long): List<Reservation>
+    + findByPhoneNumber(String, boolean): List<Reservation>
+    + findOverlappingReservations(Long, LocalDateTime, LocalDateTime): List<Reservation>
+    + softDelete(Long): boolean
+  }
+
+}
+
+package "Service Layer" {
+
+  class UserService SERVICE_COLOR {
+    - userRepository: UserRepository
+    + save(User): User
+    + findByPhoneNumberOrThrow(String): User
+    + findByUsernameOrThrow(String): User
+    + userWithUsernameExist(String): boolean
+    + userWithPhoneNumberExist(String): boolean
+  }
+
+  class CustomUserDetailsService SERVICE_COLOR {
+    - userRepository: UserRepository
+    + loadUserByUsername(String): UserDetails
+  }
+
+  class RefreshTokenService SERVICE_COLOR {
+    - refreshTokenRepository: RefreshTokenRepository
+    - jwtProperties: JwtProperties
+    + createRefreshToken(User, String): void
+    + findByToken(String): Optional<RefreshToken>
+    + verifyExpiration(RefreshToken): RefreshToken
+    + deleteByToken(String): void
+  }
+
+  class SurfaceTypeService SERVICE_COLOR {
+    - surfaceTypeRepository: SurfaceTypeRepository
+    - entityFinder: EntityFinder
+    + findByIdOrThrow(Long): SurfaceType
+    + create(SurfaceType): SurfaceType
+  }
+
+  class CourtService SERVICE_COLOR {
+    - courtRepository: CourtRepository
+    - surfaceTypeService: SurfaceTypeService
+    - entityFinder: EntityFinder
+    + findAllCourtEntities(): List<Court>
+    + getAllCourts(): List<CourtResponseDto>
+    + findCourtEntityByIdOrThrow(Long): Court
+    + getCourt(Long): CourtResponseDto
+    + save(Court): Court
+    + create(CourtRequestDto): CourtResponseDto
+    + update(Long, CourtRequestDto): CourtResponseDto
+    + softDelete(Long): void
+    + mapToEntity(CourtRequestDto): Court
+    + mapToResponseDto(Court): CourtResponseDto
+  }
+
+  class ReservationService SERVICE_COLOR {
+    - reservationRepo: ReservationRepository
+    - entityFinder: EntityFinder
+    - courtService: CourtService
+    - userService: UserService
+    - pricing: PricingProperties
+    + getReservation(Long): ReservationResponseDto
+    + findReservationEntityByIdOrThrow(Long): Reservation
+    + findAllReservationEntities(): List<Reservation>
+    + findAllReservationEntitiesByCourtId(Long): List<Reservation>
+    + findReservationsByPhoneNumber(String, boolean): List<Reservation>
+    + getAllReservations(): List<ReservationResponseDto>
+    + getReservationsByCourt(Long): List<ReservationResponseDto>
+    + getReservationsByPhoneNumber(String, boolean): List<ReservationResponseDto>
+    + create(ReservationRequestDto): ReservationResponseDto
+    + update(Long, ReservationRequestDto): ReservationResponseDto
+    + softDelete(Long): void
+    + findConflicts(Long, LocalDateTime, LocalDateTime): List<Reservation>
+    - prepareNewReservation(ReservationRequestDto): Reservation
+    - mapToResponseDto(Reservation): ReservationResponseDto
+    - calculatePrice(boolean, LocalDateTime, LocalDateTime, double): double
+  }
+
+  class AuthService SERVICE_COLOR {
+    - authenticationManager: AuthenticationManager
+    - jwtUtil: JwtUtil
+    - passwordEncoder: PasswordEncoder
+    - refreshTokenService: RefreshTokenService
+    - userDetailsService: CustomUserDetailsService
+    - userService: UserService
+    + register(RegistRequestDto): void
+    + login(LogRequestDto): TokenResponseDto
+    + refresh(RefreshTokenRequestDto): TokenResponseDto
+    + logout(String): void
+  }
+
+}
+
+package "DTO Layer" {
+
+  class UserResponseDto <<record>> DTO_COLOR {
+    + id: Long
+    + phoneNumber: String
+    + username: String
+  }
+
+  class SurfaceTypeResponseDto <<record>> DTO_COLOR {
+    + id: Long
+    + name: String
+    + pricePerMinute: double
+  }
+
+  class CourtRequestDto <<record>> DTO_COLOR {
+    + name: String {validation}
+    + surfaceTypeId: Long {validation}
+  }
+
+  class CourtResponseDto <<record>> DTO_COLOR {
+    + id: Long
+    + name: String
+    + surfaceType: SurfaceTypeResponseDto
+  }
+
+  class ReservationRequestDto <<record>> DTO_COLOR {
+    + courtId: Long {validation}
+    + isDoubles: Boolean {validation}
+    + phoneNumber: String {validation}
+    + start: LocalDateTime {validation}
+    + end: LocalDateTime {validation}
+  }
+
+  class ReservationResponseDto <<record>> DTO_COLOR {
+    + id: Long
+    + court: CourtResponseDto
+    + user: UserResponseDto
+    + startTime: LocalDateTime
+    + endTime: LocalDateTime
+    + isDoubles: boolean
+    + totalPrice: Double
+  }
+
+  class RegistRequestDto <<record>> DTO_COLOR {
+    + username: String {validation}
+    + phoneNumber: String {validation}
+    + password: String {validation}
+  }
+
+  class LogRequestDto <<record>> DTO_COLOR {
+    + username: String {validation}
+    + password: String {validation}
+  }
+
+  class RefreshTokenRequestDto <<record>> DTO_COLOR {
+    + refreshToken: String {validation}
+  }
+
+  class TokenResponseDto <<record>> DTO_COLOR {
+    + accessToken: String
+    + refreshToken: String
+  }
+
+}
+
+' Entity Relationships
+User ||--o{ RefreshToken : "user_id"
+User ||--o{ Reservation : "user_id"
+SurfaceType ||--o{ Court : "surface_type_id"
+Court ||--o{ Reservation : "court_id"
+User }o--o{ Role : "roles"
+
+' Repository Dependencies
+UserRepository ..> User : "manages"
+RefreshTokenRepository ..> RefreshToken : "manages"
+RefreshTokenRepository ..> User : "uses"
+SurfaceTypeRepository ..> SurfaceType : "manages"
+CourtRepository ..> Court : "manages"
+ReservationRepository ..> Reservation : "manages"
+
+' Service Dependencies
+UserService --> UserRepository : "uses"
+CustomUserDetailsService --> UserRepository : "uses"
+RefreshTokenService --> RefreshTokenRepository : "uses"
+SurfaceTypeService --> SurfaceTypeRepository : "uses"
+CourtService --> CourtRepository : "uses"
+CourtService --> SurfaceTypeService : "uses"
+ReservationService --> ReservationRepository : "uses"
+ReservationService --> CourtService : "uses"
+ReservationService --> UserService : "uses"
+AuthService --> RefreshTokenService : "uses"
+AuthService --> CustomUserDetailsService : "uses"
+AuthService --> UserService : "uses"
+
+' Configuration Dependencies
+SecurityConfig --> JwtAuthenticationFilter : "uses"
+JwtAuthenticationFilter --> JwtUtil : "uses"
+JwtAuthenticationFilter --> CustomUserDetailsService : "uses"
+RefreshTokenService --> JwtProperties : "uses"
+ReservationService --> PricingProperties : "uses"
+JwtUtil --> JwtProperties : "uses"
+AuthService --> JwtUtil : "uses"
+
+' Data Initialization Dependencies
+DataInitializer --> DataInitializerProperties : "uses"
+DataInitializer --> SurfaceTypeService : "uses"
+DataInitializer --> CourtService : "uses"
+DataInitializer --> UserService : "uses"
+DataInitializer --> ReservationService : "uses"
+
+' Controller Dependencies
+AuthController --> AuthService : "uses"
+CourtController --> CourtService : "uses"
+ReservationController --> ReservationService : "uses"
+
+' DTO Relationships and Usage
+CourtResponseDto *-- SurfaceTypeResponseDto : "contains"
+ReservationResponseDto *-- CourtResponseDto : "contains"
+ReservationResponseDto *-- UserResponseDto : "contains"
+
+
+/' commented out for better readability
+' Service to DTO Dependencies
+CourtService ..> CourtRequestDto : "consumes"
+CourtService ..> CourtResponseDto : "produces"
+ReservationService ..> ReservationRequestDto : "consumes"
+ReservationService ..> ReservationResponseDto : "produces"
+AuthService ..> RegistRequestDto : "consumes"
+AuthService ..> LogRequestDto : "consumes"
+AuthService ..> RefreshTokenRequestDto : "consumes"
+AuthService ..> TokenResponseDto : "produces"
+'/
+
+' Controller to DTO Dependencies
+AuthController ..> RegistRequestDto : "consumes"
+AuthController ..> LogRequestDto : "consumes"
+AuthController ..> RefreshTokenRequestDto : "consumes"
+AuthController ..> TokenResponseDto : "produces"
+CourtController ..> CourtRequestDto : "consumes"
+CourtController ..> CourtResponseDto : "produces"
+ReservationController ..> ReservationRequestDto : "consumes"
+ReservationController ..> ReservationResponseDto : "produces"
+
+' Data Initializer to DTO Dependencies
+DataInitializer ..> ReservationRequestDto : "creates"
+
+@enduml

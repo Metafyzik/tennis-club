@@ -1,0 +1,127 @@
+@startuml Court Creation Sequence Diagram
+
+!theme vibrant
+
+title Court Creation Flow in Tennis Club Application
+
+actor "Admin User" as Admin
+participant "CourtController" as Controller
+participant "CourtService" as Service
+participant "SurfaceTypeService" as SurfaceService
+participant "SurfaceTypeRepository" as SurfaceRepo
+participant "CourtRepository" as CourtRepo
+participant "EntityFinder" as Finder
+database "Database" as DB
+
+== Court Creation Request ==
+
+Admin -> Controller: POST /api/courts\n@RequestBody CourtRequestDto\n{name: "Court 5", surfaceTypeId: 1}
+
+activate Controller
+note right of Controller: @PreAuthorize("hasRole('ADMIN')")
+
+Controller -> Controller: Validate @Valid CourtRequestDto
+note right of Controller: Validates:\n- name not blank\n- surfaceTypeId not null \n- surfaceTypeId greater than 0
+
+Controller -> Service: create(CourtRequestDto)
+activate Service
+
+== Surface Type Validation ==
+
+Service -> Service: mapToEntity(CourtRequestDto)
+activate Service
+
+Service -> SurfaceService: findByIdOrThrow(surfaceTypeId)
+activate SurfaceService
+
+SurfaceService -> Finder: findByIdOrThrow(SurfaceType.class, surfaceTypeId)
+activate Finder
+
+Finder -> SurfaceRepo: findById(surfaceTypeId)
+activate SurfaceRepo
+
+SurfaceRepo -> DB: SELECT * FROM surface_type WHERE id = ?
+activate DB
+DB --> SurfaceRepo: SurfaceType entity
+deactivate DB
+
+SurfaceRepo --> Finder: Optional<SurfaceType>
+deactivate SurfaceRepo
+
+alt Surface Type Found
+    Finder --> SurfaceService: SurfaceType
+    deactivate Finder
+    SurfaceService --> Service: SurfaceType
+    deactivate SurfaceService
+else Surface Type Not Found
+    Finder -> Finder: throw EntityNotFoundException
+    Finder --> Service: EntityNotFoundException
+    Service --> Controller: EntityNotFoundException
+    Controller --> Admin: 404 Not Found
+end
+
+== Court Entity Creation ==
+
+Service -> Service: Court.builder()\n.name(dto.name())\n.surfaceType(surfaceType)\n.build()
+
+Service --> Service: Court entity
+deactivate Service
+
+== Persist Court ==
+
+Service -> CourtRepo: save(Court)
+activate CourtRepo
+
+CourtRepo -> DB: INSERT INTO court (name, surface_type_id, deleted)\nVALUES (?, ?, false)
+activate DB
+DB --> CourtRepo: Generated Court with ID
+deactivate DB
+
+CourtRepo --> Service: Saved Court entity
+deactivate CourtRepo
+
+== Response Mapping ==
+
+Service -> Service: mapToResponseDto(Court)
+activate Service
+
+Service -> Service: CourtResponseDto.builder()\n.id(court.getId())\n.name(court.getName())\n.surfaceType(surfaceTypeResponseDto)\n.build()
+
+Service --> Service: CourtResponseDto
+deactivate Service
+
+Service --> Controller: CourtResponseDto
+deactivate Service
+
+Controller -> Controller: ResponseEntity.ok(CourtResponseDto)
+
+Controller --> Admin: 201 Created\nCourtResponseDto\n{\n  "id": 5,\n  "name": "Court 5",\n  "surfaceType": {\n    "id": 1,\n    "name": "clay",\n    "pricePerMinute": 0.5\n  }\n}
+
+deactivate Controller
+
+== Error Scenarios ==
+
+note over Admin, DB
+  **Possible Error Scenarios:**
+  
+  1. **Validation Error (400 Bad Request):**
+     - Empty court name
+     - Null surfaceTypeId
+     - lower than 1 surfaceTypeId
+  
+  2. **Authentication Error (401 Unauthorized):**
+     - No JWT token provided
+     - Invalid JWT token
+  
+  3. **Authorization Error (403 Forbidden):**
+     - User doesn't have ADMIN role
+  
+  4. **Surface Type Not Found (404 Not Found):**
+     - Invalid surfaceTypeId
+  
+  5. **Database Error (500 Internal Server Error):**
+     - Database connection issues
+     - Constraint violations
+end note
+
+@enduml
