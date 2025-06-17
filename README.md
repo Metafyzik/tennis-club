@@ -8,6 +8,15 @@ With implementation authentication and authorization users with **MEMBER** role 
 - See only necessary data in reservations — no sensitive data (usernames or phone numbers) of other users.
 - Access an additional endpoint to view **only their own** reservations.
 
+## 🛠️ Tech Stack
+- Java 21
+- Spring Boot 3
+- JPA (Hibernate)
+- Liquibase
+- H2 (dev/test)
+- Maven
+- Junit
+
 ## ✨ Features
 - JWT-based authentication with refresh tokens
 - Court reservation with various filtering
@@ -22,12 +31,3 @@ With implementation authentication and authorization users with **MEMBER** role 
 
 ### Sequence Diagram for court creation
 ![Sequence Diagram](docs/uml/sequence-diagram-court-creation.svg)
-
-## 🛠️ Tech Stack
-- Java 21
-- Spring Boot 3
-- JPA (Hibernate)
-- Liquibase
-- H2 (dev/test)
-- Maven
-- Junit
