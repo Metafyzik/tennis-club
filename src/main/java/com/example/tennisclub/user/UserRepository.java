@@ -37,11 +37,40 @@ public class UserRepository {
         try {
             User user = em.createQuery("""
             SELECT u FROM User u
-            WHERE u.username = :username
+            WHERE u.username = :username AND u.deleted = false
             """, User.class)
                     .setParameter("username", username)
                     .getSingleResult();
 
+            return Optional.of(user);
+        } catch (NoResultException e) {
+            return Optional.empty();
+        }
+    }
+
+    //These functions retrieve also soft deleted users, to make registering users with used phone number or username impossible.
+    public Optional<User> findAnyByPhoneNumber(String phoneNumber) {
+        try {
+            User user = em.createQuery("""
+            SELECT u FROM User u
+            WHERE u.phoneNumber = :phone
+            """, User.class)
+                    .setParameter("phone", phoneNumber)
+                    .getSingleResult();
+            return Optional.of(user);
+        } catch (NoResultException e) {
+            return Optional.empty();
+        }
+    }
+
+    public Optional<User> findAnyByUsername(String username) {
+        try {
+            User user = em.createQuery("""
+            SELECT u FROM User u
+            WHERE u.username = :username
+            """, User.class)
+                    .setParameter("username", username)
+                    .getSingleResult();
             return Optional.of(user);
         } catch (NoResultException e) {
             return Optional.empty();

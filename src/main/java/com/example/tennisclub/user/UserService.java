@@ -30,12 +30,12 @@ public class UserService {
                         "User not found with username: " + username));
     }
 
-    public boolean userWithUsernameExist(String username) {
-        return userRepository.findByUsername(username).isPresent();
+    public boolean userWithUsernameExistsRegardlessOfDeletion(String username) {
+        return userRepository.findAnyByUsername(username).isPresent();
     }
 
-    public boolean userWithPhoneNumberExist(String phoneNumber) {
-        return userRepository.findByPhoneNumber(phoneNumber).isPresent();
+    public boolean userWithPhoneNumberExistsRegardlessOfDeletion(String phoneNumber) {
+        return userRepository.findAnyByPhoneNumber(phoneNumber).isPresent();
     }
 }
 

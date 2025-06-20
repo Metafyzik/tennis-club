@@ -37,11 +37,11 @@ public class AuthService {
 
     @Transactional
     public void register(RegistRequestDto request) {
-        if (userService.userWithUsernameExist(request.username())){
+        if (userService.userWithUsernameExistsRegardlessOfDeletion(request.username())){
             throw new ResponseStatusException(HttpStatus.CONFLICT,"Username " +request.username()+ " already taken");
         }
 
-        if (userService.userWithPhoneNumberExist(request.phoneNumber())) {
+        if (userService.userWithPhoneNumberExistsRegardlessOfDeletion(request.phoneNumber())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,"Phone number " +request.phoneNumber()+ " already taken");
         }
 
