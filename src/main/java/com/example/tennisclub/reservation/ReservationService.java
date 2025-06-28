@@ -7,6 +7,8 @@ import com.example.tennisclub.exception.EntityFinder;
 import com.example.tennisclub.reservation.config.PricingProperties;
 import com.example.tennisclub.reservation.dto.ReservationRequestDto;
 import com.example.tennisclub.reservation.dto.ReservationResponseDto;
+import com.example.tennisclub.reservation.dto.ReservationSlimResponseDto;
+import com.example.tennisclub.reservation.dto.ReservationView;
 import com.example.tennisclub.reservation.entity.Reservation;
 import com.example.tennisclub.reservation.validator.ReservationValidator;
 import com.example.tennisclub.surfaceType.dto.SurfaceTypeResponseDto;
@@ -17,6 +19,7 @@ import com.example.tennisclub.user.entity.User;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -33,10 +36,17 @@ public class ReservationService {
     private final CourtService courtService;
     private final UserService userService;
     private final PricingProperties pricing;
-    public ReservationResponseDto getReservation(Long id) {
-        Reservation reservation = findReservationEntityByIdOrThrow(id);
 
-        return mapToResponseDto(reservation);
+    public ReservationView getReservation(Long id) {
+        Reservation reservation = findReservationEntityByIdOrThrow(id);
+        
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        if (isCurrentUserAdmin()) {
+            return mapToFullResponseDto(reservation);
+        } else {
+            return mapToSlimResponseDto(reservation);
+        }
     }
 
     public Reservation findReservationEntityByIdOrThrow(Long id) {
@@ -58,28 +68,50 @@ public class ReservationService {
         return reservationRepo.findByPhoneNumber(phoneNumber, futureOnly);
     }
 
-    public List<ReservationResponseDto> getAllReservations() {
-        return findAllReservationEntities().stream()
-                .map(this::mapToResponseDto)
-                .toList();
+    public List<ReservationView> getAllReservations() {
+
+        List<Reservation> reservations = findAllReservationEntities();
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        if (isCurrentUserAdmin()) {
+            return reservations.stream()
+                    .map(this::mapToFullResponseDto)
+                    .toList();
+        } else {
+            return reservations.stream()
+                    .map(this::mapToSlimResponseDto)
+                    .toList();
+        }
     }
 
-    public List<ReservationResponseDto> getReservationsByCourt(Long courtId) {
-        return findAllReservationEntitiesByCourtId(courtId).stream()
-                .map(this::mapToResponseDto)
-                .toList();
+    public List<ReservationView> getReservationsByCourt(Long courtId) {
+
+        List<Reservation> reservations = findAllReservationEntitiesByCourtId(courtId);
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        if (isCurrentUserAdmin()) {
+            return reservations.stream()
+                    .map(this::mapToFullResponseDto)
+                    .toList();
+        } else {
+            return reservations.stream()
+                    .map(this::mapToSlimResponseDto)
+                    .toList();
+        }
     }
 
-    public List<ReservationResponseDto> getReservationsByPhoneNumber(String phoneNumber, boolean futureOnly) {
+    public List<ReservationView> getReservationsByPhoneNumber(String phoneNumber, boolean futureOnly) {
         return findReservationsByPhoneNumber(phoneNumber, futureOnly).stream()
-                .map(this::mapToResponseDto)
+                .map(this::mapToFullResponseDto)
                 .toList();
     }
 
     @Transactional
-    public ReservationResponseDto create(ReservationRequestDto dto) {
+    public ReservationView create(ReservationRequestDto dto) {
         Reservation reservation = prepareNewReservation(dto);
-        return mapToResponseDto(reservationRepo.save(reservation));
+        return mapToFullResponseDto(reservationRepo.save(reservation));
     }
     private Reservation prepareNewReservation(ReservationRequestDto dto) {
         Court court = courtService.findCourtEntityByIdOrThrow(dto.courtId());
@@ -107,8 +139,9 @@ public class ReservationService {
     public List<Reservation> findConflicts(Long courtId, LocalDateTime from, LocalDateTime to) {
         return reservationRepo.findOverlappingReservations(courtId, from, to);
     }
+
     @Transactional
-    public ReservationResponseDto update(Long reservationId, ReservationRequestDto updated) {
+    public ReservationView update(Long reservationId, ReservationRequestDto updated) {
         Reservation existing = findReservationEntityByIdOrThrow(reservationId);
 
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -129,10 +162,8 @@ public class ReservationService {
         ReservationValidator.throwIfOverlapsExist(overlaps);
 
         // in case user is changed
-        User user = userService.findByPhoneNumberOrThrow(updated.phoneNumber());
         double totalPrice = calculatePrice(updated.isDoubles(), updated.start(), updated.end(), court.getSurfaceType().getPricePerMinute());
 
-        existing.setUser(user);
         existing.setStartTime(newStart);
         existing.setEndTime(newEnd);
         existing.setIsDoubles(updated.isDoubles());
@@ -140,7 +171,7 @@ public class ReservationService {
         existing.setTotalPrice(totalPrice);
 
         Reservation updatedReservation = reservationRepo.update(existing);
-        return mapToResponseDto(updatedReservation);
+        return mapToFullResponseDto(updatedReservation);
     }
 
     @Transactional
@@ -156,7 +187,7 @@ public class ReservationService {
         reservationRepo.softDelete(id);
     }
 
-    private ReservationResponseDto mapToResponseDto(Reservation r) {
+    private ReservationView mapToFullResponseDto(Reservation r) {
         Court court = r.getCourt();
         SurfaceType st = court.getSurfaceType();
         User user = r.getUser();
@@ -175,11 +206,35 @@ public class ReservationService {
                 r.getTotalPrice()
         );
     }
+
+    private ReservationView mapToSlimResponseDto(Reservation r) {
+
+        Court court = r.getCourt();
+        SurfaceType st = court.getSurfaceType();
+
+        SurfaceTypeResponseDto stDto = new SurfaceTypeResponseDto(st.getId(), st.getName(), st.getPricePerMinute());
+        CourtResponseDto courtDto = new CourtResponseDto(court.getId(), court.getName(), stDto);
+
+        return new ReservationSlimResponseDto(
+                r.getId(),
+                courtDto,
+                r.getStartTime(),
+                r.getEndTime(),
+                r.getIsDoubles(),
+                r.getTotalPrice()
+        );
+    }
+
     private double calculatePrice(boolean isDouble, LocalDateTime start, LocalDateTime end, double pricePerSurfaceType) {
         long minutes = Duration.between(start, end).toMinutes();
         return pricePerSurfaceType * minutes * (isDouble ? pricing.getDoubles(): 1);
     }
 
+    private boolean isCurrentUserAdmin() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+    }
 
     //used for data initialization
     @Transactional
