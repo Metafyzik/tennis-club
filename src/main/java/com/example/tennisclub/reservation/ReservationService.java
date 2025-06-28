@@ -16,9 +16,9 @@ import com.example.tennisclub.user.dto.UserResponseDto;
 import com.example.tennisclub.user.entity.User;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -88,7 +88,10 @@ public class ReservationService {
         List<Reservation> overlaps = findConflicts(court.getId(), dto.start(), dto.end());
         ReservationValidator.throwIfOverlapsExist(overlaps);
 
-        User user = userService.findByPhoneNumberOrThrow(dto.phoneNumber());
+        // Use the authenticated username to find user
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userService.findByUsernameOrThrow(username);
+
         double totalPrice = calculatePrice(dto.isDoubles(), dto.start(), dto.end(), court.getSurfaceType().getPricePerMinute());
 
         return Reservation.builder()
@@ -107,6 +110,11 @@ public class ReservationService {
     @Transactional
     public ReservationResponseDto update(Long reservationId, ReservationRequestDto updated) {
         Reservation existing = findReservationEntityByIdOrThrow(reservationId);
+
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        if (!existing.getUser().getUsername().equals(username)) {
+            throw new AccessDeniedException("You are not allowed to modify this reservation");
+        }
 
         LocalDateTime newStart = updated.start();
         LocalDateTime newEnd = updated.end();
@@ -137,10 +145,15 @@ public class ReservationService {
 
     @Transactional
     public void softDelete(Long id) {
-        if (!reservationRepo.softDelete(id)){
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND, "Reservation with ID " + id + " not found");
+
+        Reservation existing = findReservationEntityByIdOrThrow(id);
+
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        if (!existing.getUser().getUsername().equals(username)) {
+            throw new AccessDeniedException("You are not allowed to modify this reservation");
         }
+
+        reservationRepo.softDelete(id);
     }
 
     private ReservationResponseDto mapToResponseDto(Reservation r) {
@@ -165,5 +178,29 @@ public class ReservationService {
     private double calculatePrice(boolean isDouble, LocalDateTime start, LocalDateTime end, double pricePerSurfaceType) {
         long minutes = Duration.between(start, end).toMinutes();
         return pricePerSurfaceType * minutes * (isDouble ? pricing.getDoubles(): 1);
+    }
+
+
+    //used for data initialization
+    @Transactional
+    public Reservation createForUser(ReservationRequestDto dto, User user) {
+        Court court = courtService.findCourtEntityByIdOrThrow(dto.courtId());
+        ReservationValidator.validateStartBeforeEnd(dto.start(), dto.end());
+
+        List<Reservation> overlaps = findConflicts(court.getId(), dto.start(), dto.end());
+        ReservationValidator.throwIfOverlapsExist(overlaps);
+
+        double totalPrice = calculatePrice(dto.isDoubles(), dto.start(), dto.end(), court.getSurfaceType().getPricePerMinute());
+
+        Reservation reservation = Reservation.builder()
+                .court(court)
+                .isDoubles(dto.isDoubles())
+                .user(user)
+                .startTime(dto.start())
+                .endTime(dto.end())
+                .totalPrice(totalPrice)
+                .build();
+
+        return reservationRepo.save(reservation);
     }
 }

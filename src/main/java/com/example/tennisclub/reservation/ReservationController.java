@@ -51,13 +51,11 @@ public class ReservationController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
     public ReservationResponseDto update(@PathVariable @Valid Long id, @RequestBody ReservationRequestDto req) {
         return reservationService.update(id, req);
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> softDelete(@PathVariable Long id) {
         reservationService.softDelete(id);
 

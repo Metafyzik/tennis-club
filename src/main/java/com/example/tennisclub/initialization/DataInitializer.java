@@ -88,21 +88,28 @@ public class DataInitializer implements CommandLineRunner {
                 .roles(Set.of(Role.ADMIN))
                 .build();
 
-        User member = User.builder()
+        User member1 = User.builder()
                 .phoneNumber("0987654321")
                 .password(encodedPassword)
                 .username("Bob")
                 .roles(Set.of(Role.MEMBER))
                 .build();
 
+        User member2 = User.builder()
+                .phoneNumber("603803555")
+                .password(encodedPassword)
+                .username("Dave")
+                .roles(Set.of(Role.MEMBER))
+                .build();
+
         userService.save(admin);
-        User createdMemberUser = userService.save(member);
+        userService.save(member2);
+        User createdMemberUser = userService.save(member1);
 
         //Create reservations
         ReservationRequestDto reservation1 = new ReservationRequestDto(
                 createdCourt1.getId(), // courtId
                 false, // isDoubles
-                createdMemberUser.getPhoneNumber(),
                 LocalDateTime.now().plusDays(1).withHour(10).withMinute(0), // start time (future)
                 LocalDateTime.now().plusDays(1).withHour(11).withMinute(0)  // end time (1 hour later)
         );
@@ -110,13 +117,12 @@ public class DataInitializer implements CommandLineRunner {
         ReservationRequestDto reservation2 = new ReservationRequestDto(
                 createdCourt2.getId(), // courtId
                 true, // isDoubles
-                createdMemberUser.getPhoneNumber(),
                 LocalDateTime.now().plusDays(2).withHour(15).withMinute(30), // start time (future)
                 LocalDateTime.now().plusDays(2).withHour(17).withMinute(0)   // end time (1.5 hours later)
         );
 
-        reservationService.create(reservation1);
-        reservationService.create(reservation2);
+        reservationService.createForUser(reservation1,member1);
+        reservationService.createForUser(reservation2,member1);
     }
 }
 
