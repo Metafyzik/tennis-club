@@ -18,10 +18,12 @@ import com.example.tennisclub.user.dto.UserResponseDto;
 import com.example.tennisclub.user.entity.User;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -144,9 +146,14 @@ public class ReservationService {
     public ReservationView update(Long reservationId, ReservationRequestDto updated) {
         Reservation existing = findReservationEntityByIdOrThrow(reservationId);
 
+        //user can only modify their own reservation
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         if (!existing.getUser().getUsername().equals(username)) {
             throw new AccessDeniedException("You are not allowed to modify this reservation");
+        }
+
+        if (existing.getStartTime().isBefore(LocalDateTime.now())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You cannot update a past reservation.");
         }
 
         LocalDateTime newStart = updated.start();
