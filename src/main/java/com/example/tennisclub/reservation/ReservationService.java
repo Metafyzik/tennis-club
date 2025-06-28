@@ -188,7 +188,11 @@ public class ReservationService {
 
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         if (!existing.getUser().getUsername().equals(username)) {
-            throw new AccessDeniedException("You are not allowed to modify this reservation");
+            throw new AccessDeniedException("You are not allowed to delete this reservation");
+        }
+
+        if (existing.getStartTime().isBefore(LocalDateTime.now())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You cannot delete a past reservation.");
         }
 
         reservationRepo.softDelete(id);
