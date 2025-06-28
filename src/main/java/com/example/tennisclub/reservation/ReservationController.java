@@ -36,7 +36,11 @@ public class ReservationController {
         return ResponseEntity.ok(reservationService.getAllReservations());
     }
 
-    //todo add show user's only reservations
+    @GetMapping("/my")
+    public ResponseEntity<List<ReservationView>> getMyReservations(
+            @RequestParam(defaultValue = "false") boolean futureOnly) {
+        return ResponseEntity.ok(reservationService.getReservationsForCurrentUser(futureOnly));
+    }
 
     @GetMapping("/by-phone")
     @PreAuthorize("hasRole('ADMIN')")

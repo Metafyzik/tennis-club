@@ -79,6 +79,17 @@ public class ReservationRepository {
         r.setDeleted(true);
         return true;
     }
+
+    public List<Reservation> findByUsername(String username, boolean futureOnly) {
+        String jpql = """
+                SELECT r FROM Reservation r
+                WHERE r.deleted = false AND r.user.username = :username
+                """ + (futureOnly ? " AND r.startTime > CURRENT_TIMESTAMP" : "") + " ORDER BY r.startTime ASC";
+
+        return em.createQuery(jpql, Reservation.class)
+                .setParameter("username", username)
+                .getResultList();
+    }
 }
 
 
