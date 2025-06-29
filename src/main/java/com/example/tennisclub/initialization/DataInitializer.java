@@ -121,8 +121,17 @@ public class DataInitializer implements CommandLineRunner {
                 LocalDateTime.now().plusDays(2).withHour(17).withMinute(0)   // end time (1.5 hours later)
         );
 
+        //reservation from the past
+        ReservationRequestDto reservation3 = new ReservationRequestDto(
+                createdCourt2.getId(), // courtId
+                true, // isDoubles
+                LocalDateTime.now().minusDays(2).withHour(14).withMinute(0), // start time (future)
+                LocalDateTime.now().minusDays(2).withHour(16).withMinute(0)   // end time (1.5 hours later)
+        );
+
         reservationService.createForUser(reservation1,member1);
         reservationService.createForUser(reservation2,member1);
+        reservationService.createForUser(reservation3,member1);
     }
 }
 
