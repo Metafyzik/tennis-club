@@ -265,13 +265,13 @@ public class ReservationService {
         return reservationRepo.save(reservation);
     }
 
-    public List<Reservation> findReservationForCurrentUser(boolean futureOnly) {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+    public List<Reservation> findReservationForCurrentUser(String username, boolean futureOnly) {
         return reservationRepo.findByUsername(username, futureOnly);
     }
 
     public List<ReservationView> getReservationsForCurrentUser(boolean futureOnly) {
-        return findReservationForCurrentUser(futureOnly).stream()
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return findReservationForCurrentUser(username, futureOnly).stream()
                 .map(this::mapToSlimResponseDto)
                 .toList();
     }
