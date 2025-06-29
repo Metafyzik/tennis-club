@@ -73,15 +73,15 @@ class AuthServiceTest {
         @Test
         void validRequest_CreatesUser() {
             RegistRequestDto request = new RegistRequestDto("newuser", "1234567890", "password123");
-            when(userService.userWithUsernameExist("newuser")).thenReturn(false);
-            when(userService.userWithPhoneNumberExist("1234567890")).thenReturn(false);
+            when(userService.userWithUsernameExistsRegardlessOfDeletion("newuser")).thenReturn(false);
+            when(userService.userWithPhoneNumberExistsRegardlessOfDeletion("1234567890")).thenReturn(false);
             when(passwordEncoder.encode("password123")).thenReturn("encoded-password");
             when(userService.save(any(User.class))).thenReturn(testUser);
 
             assertDoesNotThrow(() -> authService.register(request));
 
-            verify(userService).userWithUsernameExist("newuser");
-            verify(userService).userWithPhoneNumberExist("1234567890");
+            verify(userService).userWithUsernameExistsRegardlessOfDeletion("newuser");
+            verify(userService).userWithPhoneNumberExistsRegardlessOfDeletion("1234567890");
             verify(passwordEncoder).encode("password123");
             verify(userService).save(any(User.class));
         }
@@ -89,7 +89,7 @@ class AuthServiceTest {
         @Test
         void usernameAlreadyExists_ThrowsConflict() {
             RegistRequestDto request = new RegistRequestDto("existinguser", "1234567890", "password123");
-            when(userService.userWithUsernameExist("existinguser")).thenReturn(true);
+            when(userService.userWithUsernameExistsRegardlessOfDeletion("existinguser")).thenReturn(true);
 
             ResponseStatusException exception = assertThrows(ResponseStatusException.class,
                     () -> authService.register(request));
@@ -101,8 +101,8 @@ class AuthServiceTest {
         @Test
         void phoneNumberAlreadyExists_ThrowsConflict() {
             RegistRequestDto request = new RegistRequestDto("newuser", "1234567890", "password123");
-            when(userService.userWithUsernameExist("newuser")).thenReturn(false);
-            when(userService.userWithPhoneNumberExist("1234567890")).thenReturn(true);
+            when(userService.userWithUsernameExistsRegardlessOfDeletion("newuser")).thenReturn(false);
+            when(userService.userWithPhoneNumberExistsRegardlessOfDeletion("1234567890")).thenReturn(true);
 
             ResponseStatusException exception = assertThrows(ResponseStatusException.class,
                     () -> authService.register(request));
@@ -110,6 +110,21 @@ class AuthServiceTest {
             assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
             assertEquals("Phone number 1234567890 already taken", exception.getReason());
         }
+
+        @Test
+        void softDeletedUserWithSameUsername_ThrowsConflict() {
+            RegistRequestDto request = new RegistRequestDto("softdeleteduser", "9876543210", "pass");
+
+            // Simulate a soft-deleted user still existing
+            when(userService.userWithUsernameExistsRegardlessOfDeletion("softdeleteduser")).thenReturn(true);
+
+            ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+                    () -> authService.register(request));
+
+            assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
+            assertEquals("Username softdeleteduser already taken", exception.getReason());
+        }
+
     }
 
     @Nested
