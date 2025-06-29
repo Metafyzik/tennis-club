@@ -41,8 +41,6 @@ public class ReservationService {
 
     public ReservationView getReservation(Long id) {
         Reservation reservation = findReservationEntityByIdOrThrow(id);
-        
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
         if (isCurrentUserAdmin()) {
             return mapToFullResponseDto(reservation);
@@ -71,10 +69,7 @@ public class ReservationService {
     }
 
     public List<ReservationView> getAllReservations() {
-
         List<Reservation> reservations = findAllReservationEntities();
-
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
         if (isCurrentUserAdmin()) {
             return reservations.stream()
