@@ -12,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -118,8 +119,10 @@ class ReservationRepositoryTest {
         @Test
         void shouldReturnNonDeletedReservations() {
             List<Reservation> expectedReservations = List.of(testReservation);
+
             when(entityManager.createQuery(anyString(), eq(Reservation.class))).thenReturn(typedQuery);
             when(typedQuery.setParameter("courtId", 1L)).thenReturn(typedQuery);
+
             when(typedQuery.getResultList()).thenReturn(expectedReservations);
 
             List<Reservation> result = reservationRepository.findAllByCourtId(1L);
@@ -134,25 +137,36 @@ class ReservationRepositoryTest {
         @Test
         void withFutureOnlyTrue_ShouldIncludeFutureFilter() {
             List<Reservation> expectedReservations = List.of(testReservation);
-            when(entityManager.createQuery(anyString(), eq(Reservation.class))).thenReturn(typedQuery);
+            ArgumentCaptor<String> queryCaptor = ArgumentCaptor.forClass(String.class);
+
+            when(entityManager.createQuery(queryCaptor.capture(), eq(Reservation.class))).thenReturn(typedQuery);
             when(typedQuery.setParameter("phone", testUser.getPhoneNumber())).thenReturn(typedQuery);
             when(typedQuery.getResultList()).thenReturn(expectedReservations);
 
             List<Reservation> result = reservationRepository.findByPhoneNumber(testUser.getPhoneNumber(), true);
 
             assertEquals(expectedReservations, result);
+
+            String actualQuery = queryCaptor.getValue();
+            assertTrue(actualQuery.contains("r.startTime > CURRENT_TIMESTAMP"), "Query should filter future reservations");
         }
+
 
         @Test
         void withFutureOnlyFalse_ShouldNotIncludeFutureFilter() {
             List<Reservation> expectedReservations = List.of(testReservation);
-            when(entityManager.createQuery(anyString(), eq(Reservation.class))).thenReturn(typedQuery);
+            ArgumentCaptor<String> queryCaptor = ArgumentCaptor.forClass(String.class);
+
+            when(entityManager.createQuery(queryCaptor.capture(), eq(Reservation.class))).thenReturn(typedQuery);
             when(typedQuery.setParameter("phone", testUser.getPhoneNumber())).thenReturn(typedQuery);
             when(typedQuery.getResultList()).thenReturn(expectedReservations);
 
             List<Reservation> result = reservationRepository.findByPhoneNumber(testUser.getPhoneNumber(), false);
 
             assertEquals(expectedReservations, result);
+
+            String actualQuery = queryCaptor.getValue();
+            assertFalse(actualQuery.contains("r.startTime > CURRENT_TIMESTAMP"), "Query should not filter by future reservations");
         }
     }
 
@@ -247,6 +261,56 @@ class ReservationRepositoryTest {
             boolean result = reservationRepository.softDelete(1L);
 
             assertFalse(result);
+        }
+    }
+
+    @Nested
+    class FindReservationsByUsernameTests {
+
+        @Test
+        void withFutureOnlyTrue_ShouldIncludeFutureFilter() {
+            List<Reservation> expectedReservations = List.of(testReservation);
+            ArgumentCaptor<String> queryCaptor = ArgumentCaptor.forClass(String.class);
+
+            when(entityManager.createQuery(queryCaptor.capture(), eq(Reservation.class)))
+                    .thenReturn(typedQuery);
+            when(typedQuery.setParameter("username", testUser.getUsername()))
+                    .thenReturn(typedQuery);
+            when(typedQuery.getResultList())
+                    .thenReturn(expectedReservations);
+
+            List<Reservation> result = reservationRepository.findByUsername(testUser.getUsername(), true);
+
+            assertEquals(expectedReservations, result);
+
+            String actualQuery = queryCaptor.getValue();
+            assertTrue(actualQuery.contains("r.startTime > CURRENT_TIMESTAMP"),
+                    "Query should filter future reservations");
+            assertTrue(actualQuery.contains("r.user.username = :username"),
+                    "Query should filter by username");
+        }
+
+        @Test
+        void withFutureOnlyFalse_ShouldNotIncludeFutureFilter() {
+            List<Reservation> expectedReservations = List.of(testReservation);
+            ArgumentCaptor<String> queryCaptor = ArgumentCaptor.forClass(String.class);
+
+            when(entityManager.createQuery(queryCaptor.capture(), eq(Reservation.class)))
+                    .thenReturn(typedQuery);
+            when(typedQuery.setParameter("username", testUser.getUsername()))
+                    .thenReturn(typedQuery);
+            when(typedQuery.getResultList())
+                    .thenReturn(expectedReservations);
+
+            List<Reservation> result = reservationRepository.findByUsername(testUser.getUsername(), false);
+
+            assertEquals(expectedReservations, result);
+
+            String actualQuery = queryCaptor.getValue();
+            assertFalse(actualQuery.contains("r.startTime > CURRENT_TIMESTAMP"),
+                    "Query should not filter by future reservations");
+            assertTrue(actualQuery.contains("r.user.username = :username"),
+                    "Query should filter by username");
         }
     }
 }

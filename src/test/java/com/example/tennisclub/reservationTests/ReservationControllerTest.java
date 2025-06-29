@@ -7,6 +7,7 @@ import com.example.tennisclub.reservation.ReservationController;
 import com.example.tennisclub.reservation.ReservationService;
 import com.example.tennisclub.reservation.dto.ReservationRequestDto;
 import com.example.tennisclub.reservation.dto.ReservationResponseDto;
+import com.example.tennisclub.reservation.dto.ReservationView;
 import com.example.tennisclub.surfaceType.dto.SurfaceTypeResponseDto;
 import com.example.tennisclub.user.CustomUserDetailsService;
 import com.example.tennisclub.user.dto.UserResponseDto;
@@ -21,6 +22,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
@@ -51,6 +53,45 @@ class ReservationControllerTest {
 
     @MockitoBean
     private JwtUtil jwtUtil;
+
+
+    @Nested
+    @WithMockUser(username = "memberUser", roles = {"MEMBER"})
+    class GetMyReservationsTests {
+
+        @Test
+        void getMyReservations_whenFutureOnlyFalse() throws Exception {
+            ReservationView view = createSampleResponseDto();
+            when(reservationService.getReservationsForCurrentUser(false))
+                    .thenReturn(List.of(view));
+
+            mockMvc.perform(get("/api/reservations/my"))
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.length()").value(1))
+                    .andExpect(jsonPath("$[0].id").value(view.id()));
+
+            verify(reservationService).getReservationsForCurrentUser(false);
+        }
+
+        @Test
+        void getMyFutureReservations_whenFutureOnlyTrue() throws Exception {
+            ReservationView view = createSampleResponseDto();
+            when(reservationService.getReservationsForCurrentUser(true))
+                    .thenReturn(List.of(view));
+
+            mockMvc.perform(get("/api/reservations/my")
+                            .param("futureOnly", "true"))
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.length()").value(1))
+                    .andExpect(jsonPath("$[0].id").value(view.id()));
+
+            verify(reservationService).getReservationsForCurrentUser(true);
+        }
+
+    }
+
 
     @Nested
     class GetReservationTests {
@@ -83,7 +124,7 @@ class ReservationControllerTest {
         @WithMockUser(roles = "MEMBER")
         void getReservationsByCourt_ShouldReturnReservations() throws Exception {
             Long courtId = 1L;
-            List<ReservationResponseDto> reservations = List.of(createSampleResponseDto());
+            List<ReservationView> reservations = List.of(createSampleResponseDto());
             when(reservationService.getReservationsByCourt(courtId)).thenReturn(reservations);
 
             mockMvc.perform(get("/api/reservations/by-court/{courtId}", courtId))
@@ -93,6 +134,7 @@ class ReservationControllerTest {
 
             verify(reservationService).getReservationsByCourt(courtId);
         }
+
 
         @Test
         @WithMockUser(roles = "MEMBER")
@@ -114,7 +156,7 @@ class ReservationControllerTest {
         @Test
         @WithMockUser(roles = "MEMBER")
         void getAllReservations_ShouldReturnAllReservations() throws Exception {
-            List<ReservationResponseDto> reservations = List.of(createSampleResponseDto());
+            List<ReservationView> reservations = List.of(createSampleResponseDto());
             when(reservationService.getAllReservations()).thenReturn(reservations);
 
             mockMvc.perform(get("/api/reservations"))
@@ -125,14 +167,15 @@ class ReservationControllerTest {
         }
     }
 
+
     @Nested
     class GetReservationsByPhoneTests {
 
         @Test
-        @WithMockUser(roles = "MEMBER")
+        @WithMockUser(roles = "ADMIN")
         void getReservationsByPhone_WithDefaultFutureOnly_ShouldReturnReservations() throws Exception {
             String phoneNumber = "+420123456789";
-            List<ReservationResponseDto> reservations = List.of(createSampleResponseDto());
+            List<ReservationView> reservations = List.of(createSampleResponseDto());
             when(reservationService.getReservationsByPhoneNumber(phoneNumber, false))
                     .thenReturn(reservations);
 
@@ -145,7 +188,7 @@ class ReservationControllerTest {
         }
 
         @Test
-        @WithMockUser(roles = "MEMBER")
+        @WithMockUser(roles = "ADMIN")
         void getReservationsByPhone_UserNotFound_ShouldReturn404() throws Exception {
             String phoneNumber = "+420000000000";
 
@@ -160,10 +203,10 @@ class ReservationControllerTest {
         }
 
         @Test
-        @WithMockUser(roles = "MEMBER")
+        @WithMockUser(roles = "ADMIN")
         void getReservationsByPhone_WithFutureOnlyTrue_ShouldReturnFutureReservations() throws Exception {
             String phoneNumber = "+420123456789";
-            List<ReservationResponseDto> reservations = List.of(createSampleResponseDto());
+            List<ReservationView> reservations = List.of(createSampleResponseDto());
             when(reservationService.getReservationsByPhoneNumber(phoneNumber, true))
                     .thenReturn(reservations);
 
@@ -206,7 +249,6 @@ class ReservationControllerTest {
             ReservationRequestDto requestWithInvalidCourt = new ReservationRequestDto(
                     invalidCourtId,
                     false,
-                    "+420123456789",
                     LocalDateTime.now().plusHours(1),
                     LocalDateTime.now().plusHours(2)
             );
@@ -254,7 +296,6 @@ class ReservationControllerTest {
             ReservationRequestDto requestWithInvalidUser = new ReservationRequestDto(
                     1L,
                     false,
-                    phoneNumber,
                     LocalDateTime.now().plusHours(1),
                     LocalDateTime.now().plusHours(2)
             );
@@ -277,7 +318,7 @@ class ReservationControllerTest {
         @WithMockUser(roles = "MEMBER")
         void create_MissingFields_ShouldReturnBadRequest() throws Exception {
             ReservationRequestDto invalidRequest = new ReservationRequestDto(
-                    null, null, null, null, null
+                    null, null, null, null
             );
 
             mockMvc.perform(post("/api/reservations")
@@ -340,7 +381,6 @@ class ReservationControllerTest {
             ReservationRequestDto requestWithInvalidCourt = new ReservationRequestDto(
                     invalidCourtId,
                     false,
-                    "+420123456789",
                     LocalDateTime.now().plusHours(1),
                     LocalDateTime.now().plusHours(2)
             );
@@ -376,19 +416,6 @@ class ReservationControllerTest {
                     .andExpect(jsonPath("$.status").value(409));
 
             verify(reservationService).update(reservationId, requestDto);
-        }
-
-        @Test
-        @WithMockUser(roles = "MEMBER")
-        void update_WithMemberRole_ShouldReturnForbidden() throws Exception {
-            Long reservationId = 1L;
-            ReservationRequestDto requestDto = createSampleRequestDto();
-
-            mockMvc.perform(put("/api/reservations/{id}", reservationId)
-                            .with(csrf())
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(requestDto)))
-                    .andExpect(status().isForbidden());
         }
     }
 
@@ -428,12 +455,36 @@ class ReservationControllerTest {
 
         @Test
         @WithMockUser(roles = "MEMBER")
-        void delete_WithMemberRole_ShouldReturnForbidden() throws Exception {
+        void delete_PastReservation_ReturnsBadRequest() throws Exception {
             Long reservationId = 1L;
+
+            doThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, "You cannot delete a past reservation."))
+                    .when(reservationService).softDelete(reservationId);
 
             mockMvc.perform(delete("/api/reservations/{id}", reservationId)
                             .with(csrf()))
-                    .andExpect(status().isForbidden());
+                    .andExpect(status().isBadRequest())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.error").value("You cannot delete a past reservation."));
+
+            verify(reservationService, times(1)).softDelete(reservationId);
+        }
+
+        @WithMockUser(username = "someUser", roles = {"MEMBER"})
+        @Test
+        void delete_WhenUserIsNotOwner_ReturnForbidden() throws Exception {
+            Long reservationId = 1L;
+
+            doThrow(new AccessDeniedException("You are not allowed to delete this reservation"))
+                    .when(reservationService).softDelete(reservationId);
+
+            mockMvc.perform(delete("/api/reservations/{id}", reservationId)
+                            .with(csrf()))
+                    .andExpect(status().isForbidden())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.error").value("Forbidden - You are not allowed to delete this reservation"));
+
+            verify(reservationService, times(1)).softDelete(reservationId);
         }
     }
 
@@ -441,7 +492,6 @@ class ReservationControllerTest {
         return new ReservationRequestDto(
                 1L,
                 false,
-                "+420123456789",
                 LocalDateTime.now().plusHours(1),
                 LocalDateTime.now().plusHours(2)
         );
