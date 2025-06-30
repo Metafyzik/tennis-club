@@ -1,4 +1,4 @@
-package com.example.tennisclub.courtTests;
+package com.example.tennisclub.unitTest.courtTests;
 
 import com.example.tennisclub.court.dto.CourtRequestDto;
 import jakarta.validation.ConstraintViolation;

@@ -1,4 +1,4 @@
-package com.example.tennisclub.authTests;
+package com.example.tennisclub.unitTest.authTests;
 
 import com.example.tennisclub.auth.AuthService;
 import com.example.tennisclub.auth.dto.LogRequestDto;

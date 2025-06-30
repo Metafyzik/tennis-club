@@ -1,4 +1,4 @@
-package com.example.tennisclub.courtTests;
+package com.example.tennisclub.unitTest.courtTests;
 
 import com.example.tennisclub.auth.security.JwtUtil;
 import com.example.tennisclub.auth.security.SecurityConfig;

@@ -1,4 +1,4 @@
-package com.example.tennisclub.authTests;
+package com.example.tennisclub.unitTest.authTests;
 
 import com.example.tennisclub.auth.refreshToken.RefreshTokenRepository;
 import com.example.tennisclub.auth.refreshToken.entity.RefreshToken;

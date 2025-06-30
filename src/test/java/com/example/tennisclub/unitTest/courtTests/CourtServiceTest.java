@@ -1,4 +1,4 @@
-package com.example.tennisclub.courtTests;
+package com.example.tennisclub.unitTest.courtTests;
 
 import com.example.tennisclub.court.CourtRepository;
 import com.example.tennisclub.court.CourtService;

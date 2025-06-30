@@ -1,4 +1,4 @@
-package com.example.tennisclub.reservationTests;
+package com.example.tennisclub.unitTest.reservationTests;
 import com.example.tennisclub.court.CourtService;
 import com.example.tennisclub.court.entity.Court;
 import com.example.tennisclub.exception.EntityFinder;

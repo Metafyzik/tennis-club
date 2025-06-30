@@ -1,4 +1,4 @@
-package com.example.tennisclub.SurfaceTypeTests;
+package com.example.tennisclub.unitTest.SurfaceTypeTests;
 
 import com.example.tennisclub.surfaceType.entity.SurfaceType;
 import com.example.tennisclub.surfaceType.SurfaceTypeRepository;
