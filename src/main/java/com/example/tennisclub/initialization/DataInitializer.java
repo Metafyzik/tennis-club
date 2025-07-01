@@ -37,6 +37,11 @@ public class DataInitializer implements CommandLineRunner {
             return;
         }
 
+        //data already exist
+        if (!courtService.getAllCourts().isEmpty()){
+            return;
+        }
+
         //Create surfaces
         SurfaceType clay = SurfaceType.builder()
                 .name("clay")
