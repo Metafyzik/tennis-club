@@ -6,6 +6,8 @@ A Spring Boot application to manage tennis courts reservations, users, and surfa
 - Spring Boot 3
 - JPA (Hibernate)
 - Liquibase
+- Postgres
+- Docker
 - H2 (dev/test)
 - Maven
 - Junit
@@ -15,7 +17,8 @@ A Spring Boot application to manage tennis courts reservations, users, and surfa
 - Court reservation with various filtering
 - Admin and user roles
 - RESTful API with DTO-based communication
-- In-memory H2 database with Liquibase migrations  
+- Postgres database with Liquibase migrations
+- Unit and integration tests
 
 ## 🧩 Architecture
 
