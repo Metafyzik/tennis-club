@@ -34,7 +34,7 @@ docker-compose up --build
 ## 🧩 Architecture
 
 ### Class Diagram
-![Class Diagram](docs/uml/tennis-court-class-diagram.svg)
+![Class Diagram](docs/uml/tennis-club-class-diagram.svg)
 
 ### Sequence Diagram for court creation
 ![Sequence Diagram](docs/uml/sequence-diagram-court-creation.svg)

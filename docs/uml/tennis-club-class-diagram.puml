@@ -76,6 +76,16 @@ package "Controller Layer" {
     + softDelete(@PathVariable Long): ResponseEntity<String>
   }
 
+  class SurfaceTypeController CONTROLLER_COLOR {
+    - surfaceTypeService: SurfaceTypeService
+    + getAll(): ResponseEntity<List<SurfaceTypeResponseDto>>
+    + getSurfaceTypeById(@PathVariable Long): ResponseEntity<SurfaceTypeResponseDto>
+    + create(@RequestBody @Valid SurfaceTypeRequestDTO): ResponseEntity<SurfaceTypeResponseDto>
+    + update(@PathVariable Long, @RequestBody @Valid SurfaceTypeRequestDTO): ResponseEntity<SurfaceTypeResponseDto>
+    + delete(@PathVariable Long): ResponseEntity<String>
+    + count(): ResponseEntity<Long>
+  }
+
 }
 
 package "Entity Layer" {
@@ -144,8 +154,12 @@ package "Repository Layer" {
 
   class SurfaceTypeRepository REPOSITORY_COLOR {
     - em: EntityManager
-    + save(SurfaceType): SurfaceType
+    + findAll(): List<SurfaceType>
     + findById(Long): Optional<SurfaceType>
+    + save(SurfaceType): SurfaceType
+    + update(SurfaceType): SurfaceType
+    + softDelete(Long): boolean
+    + count(): long
   }
 
   class CourtRepository REPOSITORY_COLOR {
@@ -200,7 +214,16 @@ package "Service Layer" {
     - surfaceTypeRepository: SurfaceTypeRepository
     - entityFinder: EntityFinder
     + findByIdOrThrow(Long): SurfaceType
-    + create(SurfaceType): SurfaceType
+    + getSurfaceTypeById(Long): SurfaceTypeResponseDto
+    + findAll(): List<SurfaceType>
+    + getAll(): List<SurfaceTypeResponseDto>
+    + create(SurfaceTypeRequestDTO): SurfaceTypeResponseDto
+    + save(SurfaceType): SurfaceType
+    + update(Long, SurfaceTypeRequestDTO): SurfaceTypeResponseDto
+    + softDelete(Long): void
+    + count(): long
+    + mapToEntity(SurfaceTypeRequestDTO): SurfaceType
+    + mapToResponseDto(SurfaceType): SurfaceTypeResponseDto
   }
 
   class CourtService SERVICE_COLOR {
@@ -263,6 +286,11 @@ package "DTO Layer" {
     + id: Long
     + phoneNumber: String
     + username: String
+  }
+
+  class SurfaceTypeRequestDTO <<record>> DTO_COLOR {
+    + name: String {validation}
+    + pricePerMinute: Double {validation}
   }
 
   class SurfaceTypeResponseDto <<record>> DTO_COLOR {
@@ -364,6 +392,7 @@ AuthService --> JwtUtil : "uses"
 AuthController --> AuthService : "uses"
 CourtController --> CourtService : "uses"
 ReservationController --> ReservationService : "uses"
+SurfaceTypeController --> SurfaceTypeService : "uses"
 
 ' DTO Relationships and Usage
 CourtResponseDto *-- SurfaceTypeResponseDto : "contains"
@@ -391,5 +420,7 @@ CourtController ..> CourtRequestDto : "consumes"
 CourtController ..> CourtResponseDto : "produces"
 ReservationController ..> ReservationRequestDto : "consumes"
 ReservationController ..> ReservationResponseDto : "produces"
+SurfaceTypeController ..> SurfaceTypeRequestDTO : "consumes"
+SurfaceTypeController ..> SurfaceTypeResponseDto : "produces"
 
 @enduml
