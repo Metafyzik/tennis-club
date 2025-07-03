@@ -20,6 +20,10 @@ A Spring Boot application to manage tennis courts reservations, users, and surfa
 - Postgres database with Liquibase migrations
 - Unit and integration tests
 
+## 📘 API Documentation
+Access the full Postman docs here:  
+🔗 [View API Docs](https://documenter.getpostman.com/view/38876428/2sB34bL4B9)
+
 ## 🧩 Architecture
 
 ### Class Diagram
