@@ -24,6 +24,13 @@ A Spring Boot application to manage tennis courts reservations, users, and surfa
 Access the full Postman docs here:  
 🔗 [View API Docs](https://documenter.getpostman.com/view/38876428/2sB34bL4B9)
 
+## 🚀 Quick Start (with Docker)
+git clone https://github.com/Metafyzik/tennis-club.git
+
+cd tennisclub
+
+docker-compose up --build
+
 ## 🧩 Architecture
 
 ### Class Diagram
