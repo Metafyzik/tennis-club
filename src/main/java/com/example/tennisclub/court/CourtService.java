@@ -88,9 +88,9 @@ public class CourtService {
 
     public CourtResponseDto mapToResponseDto(Court court) {
         SurfaceType st = court.getSurfaceType();
-        SurfaceTypeResponseDto stDto = new SurfaceTypeResponseDto(
-                st.getId(), st.getName(), st.getPricePerMinute()
-        );
+
+        SurfaceTypeResponseDto stDto = surfaceTypeService.mapToResponseDto(st);
+
         return new CourtResponseDto(court.getId(), court.getName(), stDto);
     }
 

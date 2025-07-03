@@ -7,6 +7,7 @@ import com.example.tennisclub.court.dto.CourtResponseDto;
 import com.example.tennisclub.court.entity.Court;
 import com.example.tennisclub.exception.EntityFinder;
 import com.example.tennisclub.surfaceType.SurfaceTypeService;
+import com.example.tennisclub.surfaceType.dto.SurfaceTypeResponseDto;
 import com.example.tennisclub.surfaceType.entity.SurfaceType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,7 +45,7 @@ class CourtServiceTest {
     private Court court;
     private SurfaceType surfaceType;
     private CourtRequestDto courtRequestDto;
-
+    private SurfaceTypeResponseDto surfaceTypeResponseDto;
     private static final long VALID_SURFACE_TYPE_ID = 1L;
     private static final long NON_EXISTENT_ID = 999L;
 
@@ -65,6 +66,7 @@ class CourtServiceTest {
                 .build();
 
         courtRequestDto = new CourtRequestDto("Court 1", VALID_SURFACE_TYPE_ID);
+        surfaceTypeResponseDto = new SurfaceTypeResponseDto(court.getSurfaceType().getId(),court.getSurfaceType().getName(),court.getSurfaceType().getPricePerMinute());
     }
     @Nested
     class GetAllCourtsTests {
@@ -73,6 +75,7 @@ class CourtServiceTest {
         void getAllCourts_ShouldReturnAllCourts() {
             List<Court> courts = Arrays.asList(court);
             when(courtRepository.findAll()).thenReturn(courts);
+            when(surfaceTypeService.mapToResponseDto(court.getSurfaceType())).thenReturn(surfaceTypeResponseDto);
 
             List<CourtResponseDto> result = courtService.getAllCourts();
 
@@ -144,6 +147,8 @@ class CourtServiceTest {
         void create_WithValidData_ShouldCreateAndReturnCourt() {
             when(surfaceTypeService.findByIdOrThrow(VALID_SURFACE_TYPE_ID)).thenReturn(surfaceType);
             when(courtRepository.save(any(Court.class))).thenReturn(court);
+
+            when(surfaceTypeService.mapToResponseDto(court.getSurfaceType())).thenReturn(surfaceTypeResponseDto);
 
             CourtResponseDto result = courtService.create(courtRequestDto);
 
@@ -264,6 +269,9 @@ class CourtServiceTest {
 
         @Test
         void mapToResponseDto_ShouldMapCourtToDto() {
+
+            when(surfaceTypeService.mapToResponseDto(court.getSurfaceType())).thenReturn(surfaceTypeResponseDto);
+
             CourtResponseDto result = courtService.mapToResponseDto(court);
 
             assertThat(result.id()).isEqualTo(VALID_SURFACE_TYPE_ID);
@@ -290,8 +298,10 @@ class CourtServiceTest {
 
         @Test
         void getCourt_WithValidId_ShouldReturnCourtResponseDto() {
+
             when(courtRepository.findById(VALID_SURFACE_TYPE_ID)).thenReturn(Optional.of(court));
             when(entityFinder.findByIdOrThrow(Optional.of(court), VALID_SURFACE_TYPE_ID, "Court")).thenReturn(court);
+            when(surfaceTypeService.mapToResponseDto(court.getSurfaceType())).thenReturn(surfaceTypeResponseDto);
 
             CourtResponseDto result = courtService.getCourt(VALID_SURFACE_TYPE_ID);
 

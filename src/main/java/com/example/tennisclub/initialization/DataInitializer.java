@@ -53,8 +53,8 @@ public class DataInitializer implements CommandLineRunner {
                 .pricePerMinute(0.7)
                 .build();
 
-        SurfaceType clayType = surfaceTypeService.create(clay);
-        SurfaceType grassType = surfaceTypeService.create(grass);
+        SurfaceType clayType = surfaceTypeService.save(clay);
+        SurfaceType grassType = surfaceTypeService.save(grass);
 
         //Create courts
         Court court1 = Court.builder()
