@@ -76,7 +76,7 @@ class ReservationControllerAuthIT {
                 .pricePerMinute(0.5)
                 .build();
 
-        SurfaceType clayType = surfaceTypeService.create(clay);
+        SurfaceType clayType = surfaceTypeService.save(clay);
 
         //Create court
         Court court1 = Court.builder()
