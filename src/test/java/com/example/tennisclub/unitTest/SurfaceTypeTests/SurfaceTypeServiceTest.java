@@ -148,7 +148,7 @@ public class SurfaceTypeServiceTest {
     }
 
     @Test
-    void mapToResponseDto_ShouldReturnReponseDTO() {
+    void mapToResponseDto_ShouldReturnResponseDTO() {
         SurfaceTypeResponseDto SurfaceTypeResponseDto = new SurfaceTypeResponseDto(surfaceType.getId(),surfaceType.getName(),surfaceType.getPricePerMinute());
 
         SurfaceTypeResponseDto result = surfaceTypeService.mapToResponseDto(surfaceType);
@@ -156,6 +156,25 @@ public class SurfaceTypeServiceTest {
         assertThat(result.name()).isEqualTo(SurfaceTypeResponseDto.name());
         assertThat(result.pricePerMinute()).isEqualTo(SurfaceTypeResponseDto.pricePerMinute());
         assertThat(result.id()).isEqualTo(SurfaceTypeResponseDto.id());
+    }
+
+    @Test
+    void getSurfaceTypeById_ShouldSurfaceTypeResponseDto() {
+        SurfaceTypeResponseDto SurfaceTypeResponseDto = new SurfaceTypeResponseDto(surfaceType.getId(),surfaceType.getName(),surfaceType.getPricePerMinute());
+
+        when(surfaceTypeRepository.findById(1L)).thenReturn(Optional.of(surfaceType));
+        when(entityFinder.findByIdOrThrow(Optional.of(surfaceType), 1L, "SurfaceType"))
+                .thenReturn(surfaceType);
+
+        SurfaceTypeResponseDto result = surfaceTypeService.getSurfaceTypeById(1l);
+
+        assertThat(result.name()).isEqualTo(SurfaceTypeResponseDto.name());
+        assertThat(result.pricePerMinute()).isEqualTo(SurfaceTypeResponseDto.pricePerMinute());
+        assertThat(result.id()).isEqualTo(SurfaceTypeResponseDto.id());
+
+        verify(surfaceTypeRepository).findById(1L);
+        verify(entityFinder).findByIdOrThrow(Optional.of(surfaceType), 1L, "SurfaceType");
+
     }
 
     @Test
