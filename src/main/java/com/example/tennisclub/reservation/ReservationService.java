@@ -244,6 +244,7 @@ public class ReservationService {
 
     //used for data initialization
     @Transactional
+    @lombok.Generated //exclude from test coverage
     public Reservation createForUser(ReservationRequestDto dto, User user) {
         Court court = courtService.findCourtEntityByIdOrThrow(dto.courtId());
         ReservationValidator.validateStartBeforeEnd(dto.start(), dto.end());
